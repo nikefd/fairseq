@@ -255,7 +255,7 @@ Sentence generation. See search.lua for a description of search functions.
         callbacks.encode(state)
         timers.encoder:stop()
 
-        -- <eos> is used as a start-of-sentence marker
+        -- <eos> is used as a end-of-sentence marker
         local targetIn = torch.Tensor(bbsz):type(self:type())
         targetIn:fill(dict:getEosIndex())
         local sourceLen = sample.source:size(1)
