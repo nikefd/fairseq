@@ -547,16 +547,16 @@ data.loadCorpus = argcheck{
                         fields = {sourceField, targetField},
                         path = config.datadir,
                     }
-                    if set == 'train' and config.maxsourcelen
-                        and config.maxsourcelen > 0 then
+                    if config.maxseqlen and config.maxseqlen > 0 then
+                        print("Start to resample!\n")
                         local tds = require 'tds'
                         local resample = tds.Vec()
-                        local maxlen = config.maxsourcelen
+                        local maxlen = config.maxseqlen
                         -- XXX this is super slow, we should use the index
                         -- instead
                         for i = 1, dataset:size() do
                             local s = dataset:get(i)
-                            if s[sourceField]:nElement() <= maxlen then
+                            if s[sourceField]:nElement() <= maxlen and s[targetField]:nElement() <= maxlen then
                                 resample:insert(i)
                             end
                         end

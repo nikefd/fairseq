@@ -65,6 +65,9 @@ cmd:option('-nwordssrc', -1,
     'number of source words to retain')
 cmd:option('-destdir', 'data-bin')
 
+cmd:option('-max_word_vocab_size', 40000, 'Word vocabulary size limit.')
+
+
 local config = cmd:parse(arg)
 assert(not (config.nwordstgt >= 0 and config.thresholdtgt > 0),
     'Specify either a frequency threshold or a word count')
@@ -79,6 +82,7 @@ pldir.makepath(config.destdir)
 local src = {
     lang = config.sourcelang,
     threshold = config.thresholdsrc,
+    maxWordVocabSize = config.max_word_vocab_size,
     nwords = config.nwordssrc,
     dictbin = plpath.join(
         config.destdir, 'dict.' .. config.sourcelang .. '.th7'
@@ -94,6 +98,7 @@ local src = {
 local tgt = {
     lang = config.targetlang,
     threshold = config.thresholdtgt,
+    maxWordVocabSize = config.max_word_vocab_size,
     nwords = config.nwordstgt,
     dictbin = plpath.join(
         config.destdir, 'dict.' .. config.targetlang .. '.th7'
@@ -110,6 +115,7 @@ for _, lang in ipairs({src, tgt}) do
     lang.dict = tok.buildDictionary{
         filename = lang.traintxt,
         threshold = lang.threshold,
+        maxWordVocabSize = config.max_word_vocab_size,
     }
     if lang.nwords >= 0 then
         lang.dict.cutoff = lang.nwords + lang.dict.nspecial

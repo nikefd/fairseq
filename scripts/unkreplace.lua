@@ -51,6 +51,7 @@ end
 
 local hypos = {}
 local attns = {}
+local count = 0
 while true do
     local line = fd:read()
     if line == nil then
@@ -65,16 +66,23 @@ while true do
     else
         num = parts[1]:match('^A%-(%d+)')
         if num then
+            count = count + 1
             num = tonumber(num)
             attns[num] = tablex.map(tonumber, stringx.split(parts[2]))
         end
     end
 end
 
-assert(#hypos == #attns,
-    'Number of hypotheses and attention scores does not match')
-assert(#hypos == #srcs,
-    'Number of hypotheses and source sentences does not match')
+function tablelength(T)
+  local count = 0
+  for _ in pairs(T) do count = count + 1 end
+  return count
+end
+
+--assert(#hypos == #attns,
+--    'Number of hypotheses and attention scores does not match')
+--assert(#hypos == #srcs,
+--    'Number of hypotheses and source sentences does not match')
 
 for i = 1, #hypos do
     local htoks = stringx.split(hypos[i])

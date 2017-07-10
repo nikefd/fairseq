@@ -34,6 +34,7 @@ local source = io.open(config.source)
 local target = io.open(config.target)
 local alignment = io.open(config.alignment)
 local n = 0
+
 while true do
     local s = source:read()
     if s == nil then
@@ -49,6 +50,16 @@ while true do
         local apair = tablex.map(tonumber, stringx.split(atok, '-'))
         local stok = stoks[apair[1] + 1]
         local ttok = ttoks[apair[2] + 1]
+        
+        if not stok then
+            print(string.format('Processed %d sentences', n))
+            error(string.format("Source token is nil: %s at %d in '%s'", stok,  apair[1] + 1, s))
+        end
+        if not ttok then
+            print(string.format('Processed %d sentences', n))
+            error(string.format("Target token is nil: %s at %d in '%s'", ttok,  apair[2] + 1, t))
+        end
+
         if not dict[stok] then
             dict[stok] = tds.Hash()
         end

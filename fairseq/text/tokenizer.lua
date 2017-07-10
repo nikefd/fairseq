@@ -56,9 +56,11 @@ local lineCount = argcheck{
 
 tokenizer.makeDictionary = argcheck{
     {name='threshold', type='number', default=1},
-    call = function(threshold)
+    {name='maxWordVocabSize', type='number', defalut=10000},
+    call = function(threshold, maxWordVocabSize)
         return Dictionary{
             threshold = threshold,
+            maxWordVocabSize = maxWordVocabSize,
             unk = tokenizer.unk,
             pad = tokenizer.pad,
             eos = tokenizer.eos,
@@ -69,11 +71,13 @@ tokenizer.makeDictionary = argcheck{
 tokenizer.buildDictionary = argcheck{
     {name='filename', type='string'},
     {name='threshold', type='number', default=1},
+    {name='maxWordVocabSize', type='number', defalut=10000},
     {name='tokenize', type='function', default=tokenizer.tokenize},
     noordered = true,
-    call = function(filename, threshold, tokenize)
+    call = function(filename, maxWordVocabSize, threshold, tokenize)
         local dict = tokenizer.makeDictionary{
             threshold = threshold,
+            maxWordVocabSize = maxWordVocabSize,
         }
         addFileToDictionary(filename, dict, tokenize)
         dict:finalize()
@@ -84,12 +88,14 @@ tokenizer.buildDictionary = argcheck{
 tokenizer.buildDictionary = argcheck{
     {name='filenames', type='table'},
     {name='threshold', type='number', default=1},
+    {name='maxWordVocabSize', type='number', defalut=10000},
     {name='tokenize', type='function', default=tokenizer.tokenize},
     overload = tokenizer.buildDictionary,
     noordered = true,
-    call = function(filenames, threshold, tokenize)
+    call = function(filenames, maxWordVocabSize, threshold, tokenize)
         local dict = tokenizer.makeDictionary{
             threshold = threshold,
+            maxWordVocabSize = maxWordVocabSize,
         }
         for i, filename in pairs(filenames) do
             addFileToDictionary(filename, dict, tokenize)

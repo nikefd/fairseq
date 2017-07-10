@@ -22,12 +22,13 @@ local Dictionary = torch.class('Dictionary')
 Dictionary.__init = argcheck{
     {name='self', type='Dictionary'},
     {name='threshold', type='number', default=0},
+    {name='maxWordVocabSize', type='number', defalut=10000},
     {name='unk', type='string', default='<unk>'},
     {name='pad', type='string', default='<pad>'},
     {name='eos', type='string', default='</s>'},
-    call = function(self, threshold, unk, pad, eos)
-        self.symbol_to_index = tds.Hash()
-        self.index_to_symbol = tds.Vec()
+    call = function(self, maxWordVocabSize, threshold, unk, pad, eos)
+        self.symbol_to_index = tds.Hash()  
+        self.index_to_symbol = tds.Vec()  --Creates a vector of elements indexed by numbers starting from 1.
         self.index_to_freq = tds.Vec()
         self.cutoff = math.huge
 
@@ -40,6 +41,7 @@ Dictionary.__init = argcheck{
         self:addSymbol(self.eos)
         self.eos_index = self:getIndex(self.eos)
         self.threshold = threshold
+        self.maxWordVocabSize = maxWordVocabSize
         -- It's assumed that indices until and including to self.nspecial are
         -- occupied by special symbols.
         self.nspecial = 3
@@ -59,6 +61,22 @@ function Dictionary:addSymbol(symbol)
 end
 
 function Dictionary:_applyFrequencyThreshold()
+    local cutoff = math.huge
+    for idx, freq in ipairs(self.index_to_freq) do
+        if idx > self.nspecial and freq < self.threshold then
+            cutoff = idx - 1
+            break
+        end
+    end
+
+    if cutoff == math.huge then
+        -- No regular symbols above threshold, retain special symbols only
+        cutoff = self.nspecial
+    end
+    return cutoff
+end
+
+function Dictionary:_applyMaxWordVocabSizeLimit()
     local cutoff = math.huge
     for idx, freq in ipairs(self.index_to_freq) do
         if idx > self.nspecial and freq < self.threshold then
@@ -95,11 +113,18 @@ function Dictionary:finalize()
     self.index_to_freq = new_freq
 
     collectgarbage()
-    if self.threshold > 0 then
-        self.cutoff = self:_applyFrequencyThreshold()
+    
+    if #self.index_to_symbol > self.maxWordVocabSize then
+        self.cutoff = self.maxWordVocabSize
     else
         self.cutoff = #self.index_to_symbol
     end
+    
+--    if self.threshold > 0 then
+--        self.cutoff = self:_applyFrequencyThreshold()
+--    else
+--        self.cutoff = #self.index_to_symbol
+--    end
 end
 
 function Dictionary:getIndex(symbol)

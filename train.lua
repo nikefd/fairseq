@@ -52,14 +52,14 @@ cmd:option('-momentum', 0, 'momentum for sgd/nag optimizers')
 cmd:option('-annealing_type', 'fast',
     'whether to decrease learning rate with a fast or slow schedule')
 cmd:option('-noearlystop', false, 'no early stopping for Adam/Adagrad')
-cmd:option('-batchsize', 32, 'batch size (number of sequences)')
+cmd:option('-batchsize', 128, 'batch size (number of sequences)')
 cmd:option('-bptt', 25, 'back-prop through time steps')
 cmd:option('-maxbatch', 0, 'maximum number of tokens per batch')
 cmd:option('-clip', 25,
     'clip threshold of gradients (per sequence without -timeavg)')
 cmd:option('-maxepoch', 100, 'maximum number of epochs')
 cmd:option('-minepochtoanneal', 0, 'minimum number of epochs before annealing')
-cmd:option('-maxsourcelen', 0,
+cmd:option('-maxseqlen', 0,
     'maximum source sentence length in training data')
 cmd:option('-ndatathreads', 1, 'number of threads for data preparation')
 cmd:option('-log_interval', 1000, 'log training statistics every n updates')
@@ -203,7 +203,7 @@ end
 local make_criterion_fn = function(id)
     -- Don't produce losses and gradients for the padding symbol
     local padindex = config.dict:getIndex(config.dict.pad)
-    local critweights = torch.ones(config.dict:size()):cuda()
+    local critweights = torch.ones(config.dict:size()):cuda()  --config.dict:size() = 40000
     critweights[padindex] = 0
     local criterion = nn.CrossEntropyCriterion(critweights, false):cuda()
     return criterion, critweights
@@ -358,9 +358,9 @@ engine.hooks.onUpdate = hooks.call{
             local ppl = math.pow(2, loss)
             local elapsed = timeMeter.n * timeMeter:value()
             local statsstr = string.format(
-                '| epoch %03d | %07d updates | words/s %7d' ..
+                '| [ %s ] | epoch %03d | %07d updates | words/s %7d' ..
                 '| trainloss %8.2f | train ppl %8.2f',
-                state.epoch, state.t, lossMeter.n / elapsed, loss, ppl)
+                os.date(), state.epoch, state.t, lossMeter.n / elapsed, loss, ppl)
             if state.dictstats then
                 statsstr = statsstr .. string.format(
                     ' | avg_dict_size %.2f',
