@@ -52,6 +52,10 @@ cmd:option('-freqthreshold', -1,
     'to be considered (default no limit)')
 cmd:option('-fconvfast', false, 'make fconv model faster')
 
+cmd:option('-unkaligndict', '', 'path to alignment dictionary')
+cmd:option('-unkmarker', '<unk>', 'unknown word marker')
+cmd:option('-offset', 0, 'apply offset to attention maxima')
+
 local config = cmd:parse(arg)
 
 -------------------------------------------------------------------
@@ -73,8 +77,12 @@ if config.aligndictpath ~= '' then
     config.nmostcommon = math.min(config.nmostcommon, config.dict:size())
 end
 
+local unkaligndict = torch.load(config.unkaligndict)
+
 local TextFileIterator, _ =
     torch.class('tnt.TextFileIterator', 'tnt.DatasetIterator', tnt)
+
+local inputline
 
 TextFileIterator.__init = argcheck{
     {name='self', type='tnt.TextFileIterator'},
@@ -95,6 +103,7 @@ TextFileIterator.__init = argcheck{
                     io.stdout:flush()
                 end
                 local line = fd:read()
+                inputline = line
                 if line ~= nil then
                     return transform(line)
                 elseif fd ~= io.stdin then
@@ -220,16 +229,41 @@ for sample in dataset() do
     -- Print results
     local sourceString = config.srcdict:getString(sample.source:t()[1])
     sourceString = sourceString:gsub(seos .. '.*', '')
-    print('S', sourceString)
-    print('O', sample.text)
+--    print('S', sourceString)
+--    print('O', sample.text)
 
     for i = 1, math.min(config.nbest, config.beam) do
         local hypo = config.dict:getString(hypos[i]):gsub(eos .. '.*', '')
-        print('H', scores[i], hypo)
+        
+        
+        local htoks = plstringx.split(hypo)
+        local stoks = plstringx.split(inputline)
+        
+--        print('H', scores[i], hypo)
         -- NOTE: This will print #hypo + 1 attention maxima. The last one is the
         -- attention that was used to generate the <eos> symbol.
         local _, maxattns = torch.max(attns[i], 2)
-        print('A', table.concat(maxattns:squeeze(2):totable(), ' '))
+        local attens = maxattns:squeeze(2):totable()
+--        print('A', table.concat(attens, ' '))
+        
+        for j = 1, #htoks do
+            if htoks[j] == config.unkmarker then
+                local attn = attens[j] + config.offset
+                if attn < 1 or attn > #stoks then
+                    io.stderr:write(string.format(
+                        'Sentence %d: attention index out of bound: %d\n',
+                        i, attn))
+                else
+                    local stok = stoks[attn]
+                    if unkaligndict[stok] then
+                        htoks[j] = unkaligndict[stok]
+                    else
+                        htoks[j] = stok
+                    end
+                end
+            end
+        end
+        print('H：', plstringx.join(' ', htoks))
     end
 
     io.stdout:flush()
