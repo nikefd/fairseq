@@ -60,7 +60,7 @@ cmd:option('-clip', 25,
 cmd:option('-maxepoch', 100, 'maximum number of epochs')
 cmd:option('-minepochtoanneal', 0, 'minimum number of epochs before annealing')
 cmd:option('-maxseqlen', 0,
-    'maximum source sentence length in training data')
+    'maximum sentence length in training data')
 cmd:option('-ndatathreads', 1, 'number of threads for data preparation')
 cmd:option('-log_interval', 1000, 'log training statistics every n updates')
 cmd:option('-save_interval', -1,

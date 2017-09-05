@@ -51,7 +51,6 @@ end
 
 local hypos = {}
 local attns = {}
-local count = 0
 while true do
     local line = fd:read()
     if line == nil then
@@ -66,17 +65,10 @@ while true do
     else
         num = parts[1]:match('^A%-(%d+)')
         if num then
-            count = count + 1
             num = tonumber(num)
             attns[num] = tablex.map(tonumber, stringx.split(parts[2]))
         end
     end
-end
-
-function tablelength(T)
-  local count = 0
-  for _ in pairs(T) do count = count + 1 end
-  return count
 end
 
 --assert(#hypos == #attns,
@@ -90,7 +82,13 @@ for i = 1, #hypos do
     for j = 1, #htoks do
         if htoks[j] == config.unk then
             local attn = attns[i][j] + config.offset
-            if attn < 1 or attn > #stoks then
+            if attn == #stoks + 1 then
+                if j == 1 then
+                    htoks[j] = stoks[1]
+                else
+                    htoks[j] = ''
+                end
+            elseif attn < 1 or attn > #stoks + 1 then
                 io.stderr:write(string.format(
                     'Sentence %d: attention index out of bound: %d\n',
                     i, attn))

@@ -222,6 +222,40 @@ repeat
     runk = string.format('<%s>', runk)
 until dict:getIndex(runk) == dict:getUnkIndex()
 
+function print_r ( t )  
+    local print_r_cache={}
+    local function sub_print_r(t,indent)
+        if (print_r_cache[tostring(t)]) then
+            print(indent.."*"..tostring(t))
+        else
+            print_r_cache[tostring(t)]=true
+            if (type(t)=="table") then
+                for pos,val in pairs(t) do
+                    if (type(val)=="table") then
+                        print(indent.."["..pos.."] => "..tostring(t).." {")
+                        sub_print_r(val,indent..string.rep(" ",string.len(pos)+8))
+                        print(indent..string.rep(" ",string.len(pos)+6).."}")
+                    elseif (type(val)=="string") then
+                        print(indent.."["..pos..'] => "'..val..'"')
+                    else
+                        print(indent.."["..pos.."] => "..tostring(val))
+                    end
+                end
+            else
+                print(indent..tostring(t))
+            end
+        end
+    end
+    if (type(t)=="table") then
+        print(tostring(t).." {")
+        sub_print_r(t,"  ")
+        print("}")
+    else
+        sub_print_r(t,"  ")
+    end
+    print()
+end
+
 for sample in dataset() do
     sample.bsz = 1
     local hypos, scores, attns = model:generate(config, sample, searchf)
@@ -231,7 +265,7 @@ for sample in dataset() do
     sourceString = sourceString:gsub(seos .. '.*', '')
 --    print('S', sourceString)
 --    print('O', sample.text)
-
+--    print_r(attns)
     for i = 1, math.min(config.nbest, config.beam) do
         local hypo = config.dict:getString(hypos[i]):gsub(eos .. '.*', '')
         
@@ -242,14 +276,21 @@ for sample in dataset() do
 --        print('H', scores[i], hypo)
         -- NOTE: This will print #hypo + 1 attention maxima. The last one is the
         -- attention that was used to generate the <eos> symbol.
-        local _, maxattns = torch.max(attns[i], 2)
+        
+        local _, maxattns = torch.max(attns[i], 2)  -- attns (bsz * beam) * (targetlen * sourcelen)
         local attens = maxattns:squeeze(2):totable()
 --        print('A', table.concat(attens, ' '))
         
         for j = 1, #htoks do
             if htoks[j] == config.unkmarker then
                 local attn = attens[j] + config.offset
-                if attn < 1 or attn > #stoks then
+                if attn == #stoks + 1 then
+                    if j == 1 then
+                        htoks[j] = stoks[1]
+                    else
+                        htoks[j] = ''
+                    end
+                elseif attn < 1 or attn > #stoks + 1 then
                     io.stderr:write(string.format(
                         'Sentence %d: attention index out of bound: %d\n',
                         i, attn))
@@ -269,3 +310,4 @@ for sample in dataset() do
     io.stdout:flush()
     collectgarbage()
 end
+

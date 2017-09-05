@@ -25,6 +25,11 @@ cmd:option('-output_model', 'float_model.th7',
 local config = cmd:parse(arg)
 
 local model = torch.load(config.input_model)
+print("hello world")
+print(torch.type(model))
 model:float()
+print(torch.type(model))
+model = model:float()
+print(torch.type(model))
 model.module:getParameters()
 torch.save(config.output_model, model)

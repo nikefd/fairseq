@@ -29,7 +29,7 @@ INSTALL(TARGETS fairseq_clib DESTINATION "${ROCKS_LIBDIR}")
 INSTALL(DIRECTORY "fairseq" DESTINATION "${ROCKS_LUADIR}" FILES_MATCHING PATTERN "*.lua")
 
 # Scripts and main executable
-FOREACH(SCRIPT preprocess train tofloat generate generate-lines score optimize-fconv help)
+FOREACH(SCRIPT preprocess train tofloat generate generate-lines score optimize-fconv help webapi testqps testqps-batch)
   INSTALL(FILES "${SCRIPT}.lua" DESTINATION "${ROCKS_LUADIR}/fairseq/scripts")
 ENDFOREACH(SCRIPT)
 INSTALL(FILES "run.lua" DESTINATION "${ROCKS_BINDIR}" RENAME "fairseq")
